@@ -6,8 +6,8 @@ import AuthEntity from 'src/entities/auth.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import UsersEntity from 'src/entities/auth.entity';
-import * as path from 'path';
 import * as fs from 'fs';
+import path, { join } from 'path';
 import { CreateBoardDto } from './DTO/createDTO';
 
 @Injectable()
@@ -21,11 +21,10 @@ export class BoardService {
     ){}
     async create(body: CreateBoardDto, req:Request, res: Response, file: Express.Multer.File) {
         const successLogin = req.headers.authorization;
-        //if(!successLogin) successLogin = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiMzFmN2VhYWQtMzNmNy00N2E3LWE1ODItOTE1MGUzYTk4YzkwIiwiaWF0IjoxNzAyMjg4MDEwfQ.4o-f9Chtpm_1Q4QaB1vuvkpvAHT4USLi9U3M-Nc6aw0";
 
         const {name,price,info,material} = body;
         console.log(req.body)
-        const verify = this.jwtService.verify(successLogin,{secret: process.env.SECRET_TOKEN})
+        const verify = this.jwtService.verify(successLogin.replace("Bearer ", ""),{secret: process.env.SECRET_TOKEN})
         const user = await this.authRepository.findOne({
             where: {
                 uuid: verify.uuid
@@ -46,7 +45,7 @@ export class BoardService {
                 massage: err.message ?? 'Internal Error',
             });
         }
-
+        // console.log("안녕 :" + file.path)
         await this.boardRepository.insert({
             name,
             price,
@@ -57,7 +56,7 @@ export class BoardService {
         })
 
         return res.status(200).json({
-            success: true,
+            success: true, 
             message: '상점 물건 업로드 완료'
         })
 
@@ -66,7 +65,7 @@ export class BoardService {
     async delete(req: Request, res: Response){
         const successLogin = req.headers.authorization;
         const {uuid} = req.body;
-        const verify = this.jwtService.verify(successLogin,{secret: process.env.SECRET_TOKEN})
+        const verify = this.jwtService.verify(successLogin.replace("Bearer ", ""),{secret: process.env.SECRET_TOKEN})
         const user = await this.authRepository.findOne({
             where: {
                 uuid: verify.uuid
@@ -99,8 +98,9 @@ export class BoardService {
 
     async getList(req: Request,res: Response) {
         const successLogin = req.headers.authorization;
+        
         const {page} = req.query;
-        const verify = this.jwtService.verify(successLogin,{secret: process.env.SECRET_TOKEN})
+        const verify = this.jwtService.verify(successLogin.replace("Bearer ", ""),{secret: process.env.SECRET_TOKEN})
         const user = await this.authRepository.findOne({
             where: {
                 uuid: verify.uuid
@@ -125,7 +125,6 @@ export class BoardService {
             take,
             skip
         });
-        
 
         return res.status(200).json({
             success: true,
@@ -138,7 +137,7 @@ export class BoardService {
         const successLogin = req.headers.authorization;
         const {uuid} = req.query;
         
-        const verify = this.jwtService.verify(successLogin,{secret: process.env.SECRET_TOKEN})
+        const verify = this.jwtService.verify(successLogin.replace("Bearer ", ""),{secret: process.env.SECRET_TOKEN})
         const user = await this.authRepository.findOne({
             where: {
                 uuid: verify.uuid
@@ -153,7 +152,7 @@ export class BoardService {
         try{
             if(!uuid){ throw {status: 400, message: "선택을 해주세요"}};
             if(!user){ throw {status: 400 , message: "잘못된 토큰입니다"}};
-            if(!infor){ throw {status: 400 , message: "없는 마편입니다"}};
+            if(!infor){ throw {status: 400 , message: "없는 정보입니다"}};
             
         }catch(err){
             return res.status(err.status ?? 500).json({
@@ -168,5 +167,28 @@ export class BoardService {
         });
     }
 
-
+    async findImg(req: Request, res: Response) {
+        const { uuid } = req.query;
+        const uuids = uuid.toString();
+        console.log(uuids)
+        const user = await this.boardRepository.findOne({
+          where: {
+            uuid: uuids
+          }
+        })
+    
+        try {
+          if (!uuid) throw ({ status: 400, message: 'uuid를 입력해주세요.' })
+          if (!user) throw ({ status: 400, message: '이미지를 찾을 수 없습니다.' })
+        } catch (err) {
+          return res
+            .status(err.status ?? 500)
+            .json({
+              success: false,
+              message: err.message ?? 'Internal Error'
+            })
+        }
+    
+        return res.sendFile(user.img);
+      }
 }

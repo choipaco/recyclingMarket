@@ -27,4 +27,9 @@ export class BoardController {
     Infor(@Req() req:Request,@Res() res:Response){
         return this.boardService.infor(req,res);
     }
+
+    @Get('/get/img')
+    Img(@Req() req:Request,@Res() res:Response){
+        return this.boardService.findImg(req,res)
+    }
 }
