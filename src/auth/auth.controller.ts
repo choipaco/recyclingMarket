@@ -6,11 +6,6 @@ import { Request, Response } from 'express';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-  @Post('/isEmaliExist')
-  isEmaliExist(@Req() req:Request, @Res() res:Response) {
-    return this.authService.isEmaliExist(req, res);
-  }
-
   @Post('/logout')
   async logout(@Res() res: Response) {
     return this.authService.logout(res);
@@ -31,14 +26,4 @@ export class AuthController {
     return this.authService.register(req, res);
   }
 
-  @Get('/list')
-  list(@Req() req:Request, @Res() res:Response) {
-    return this.authService.list(req, res);
-  }
-
-  @Put('/change/type')
-  changeType(@Req() req:Request, @Res() res:Response){
-    return this.authService.changeType(req,res);
-  }
-  
 }

@@ -6,6 +6,9 @@ import AuthEntity from 'src/entities/auth.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import UsersEntity from 'src/entities/auth.entity';
+import * as path from 'path';
+import * as fs from 'fs';
+import { CreateBoardDto } from './DTO/createDTO';
 
 @Injectable()
 export class BoardService {
@@ -16,9 +19,12 @@ export class BoardService {
         private readonly authRepository: Repository<AuthEntity>,
         private readonly jwtService: JwtService
     ){}
-    async create(req: Request,res: Response) {
+    async create(body: CreateBoardDto, req:Request, res: Response, file: Express.Multer.File) {
         const successLogin = req.headers.authorization;
-        const {title,content,isShow} = req.body;
+        //if(!successLogin) successLogin = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiMzFmN2VhYWQtMzNmNy00N2E3LWE1ODItOTE1MGUzYTk4YzkwIiwiaWF0IjoxNzAyMjg4MDEwfQ.4o-f9Chtpm_1Q4QaB1vuvkpvAHT4USLi9U3M-Nc6aw0";
+
+        const {name,price,info,material} = body;
+        console.log(req.body)
         const verify = this.jwtService.verify(successLogin,{secret: process.env.SECRET_TOKEN})
         const user = await this.authRepository.findOne({
             where: {
@@ -27,10 +33,13 @@ export class BoardService {
         });
 
         try{
-            if(!title){ throw {status: 400, message: '제목을 입력해주세요'} };
-            if(!content){ throw {status: 400, message: '내용을 입력해주세요'} };
+            if(!name){ throw {status: 400, message: '제품 이름을 입력해주세요'} };
+            if(!price){ throw {status: 400, message: '제품 가격을 입력해주세요'} };
+            if(!info){ throw {status: 400, message: '제품 설명을 입력해주세요'} };
+            if(!material){ throw {status: 400, message: '이 물건의 주된 재료의 이름을 입력해주세요'} };
+            if(!file){ throw {status: 400, message: '물건의 이미지를 넣어주세요'} };
             if(!user){ throw {status: 400 , message: "잘못된 토큰입니다"}};
-            if(isShow === null) { throw {status: 400 , message: "보여줄껀지 알려주세요"}};
+
         }catch(err){
             return res.status(err.status ?? 500).json({
                 success: false,
@@ -39,15 +48,17 @@ export class BoardService {
         }
 
         await this.boardRepository.insert({
-            title,
-            content,
+            name,
+            price,
+            info,
+            material,
             user,
-            isShow
+            img: file.path
         })
 
         return res.status(200).json({
             success: true,
-            message: '마음의 편지 작성완료'
+            message: '상점 물건 업로드 완료'
         })
 
     }
@@ -65,19 +76,24 @@ export class BoardService {
         try{
             if(!uuid){ throw{status: 400, message: '다시 선택해주세요'}};
             if(!user){ throw{status: 400, message: '잘못된 토큰입니다'}};
-            if(user.type !== 'admin') { throw{status: 403, message: '잘못된 접근입니다'}};
         }catch(err){
             return res.status(err.status ?? 500).json({
                 success: false,
                 massage: err.message ?? 'Internal Error',
             });
         }
+        const imgpath = await this.boardRepository.findOne({
+            where: {
+                uuid
+            },
+        })
 
+            await fs.promises.unlink(imgpath.img);
             await this.boardRepository.delete(uuid)
 
             return res.status(200).json({
                 success: true,
-                message: '마음의 편지가 성공적으로 삭제되었습니다'
+                message: '물건 정보가 삭제 되었습니다'
             })
     }
 
@@ -100,46 +116,20 @@ export class BoardService {
                 massage: err.message ?? 'Internal Error',
             });
         }
-        const take = 9;
-        const skip = 9 * (Number(page) - 1);
-        let list;
-        if(user.type !== 'stu'){
-            list = await this.boardRepository.find({
-                order: {
-                    createdAt: "DESC"
-                },
-                take,
-                skip
-            });
-        }else{
-            list = await this.boardRepository.find({
-                where:{
-                    isShow: true
-                },
-                order: {
-                    createdAt: "DESC"
-                },
-                take,
-                skip
-            });
-            
-        }
-        let lists;
-        if(user.type !== 'stu'){
-            lists = await this.boardRepository.find();
-        }else{
-            lists = await this.boardRepository.find({
-                where:{
-                    isShow: true
-                }
-            });
-        }
-        const length = lists.length / 9;
+        const take = 20;
+        const skip = 20 * (Number(page) - 1);
+        let list = await this.boardRepository.find({
+            order: {
+                createdAt: "DESC"
+            },
+            take,
+            skip
+        });
+        
 
         return res.status(200).json({
             success: true,
-            list,
-            length: Math.ceil(length)
+            list
         })
 
     }

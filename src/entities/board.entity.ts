@@ -7,13 +7,19 @@ export default class BoardEntity {
   uuid: string;
 
   @Column({ name: 'title', type: 'varchar', length: 120, nullable: false})
-  title: string;
+  name: string;
 
   @Column({ name: 'content', type: 'text', nullable: false })
-  content: string;
+  price: number;
 
-  @Column({name: 'isShow', type: 'boolean', nullable: false})
-  isShow: boolean
+  @Column({name: 'img', type: 'varchar', nullable: false })
+  img: string;
+
+  @Column({name:"info", type: 'varchar', nullable: false})
+  info: string;
+
+  @Column({name:"material", type: "varchar", nullable: false})
+  material: string;
 
   @CreateDateColumn({type: "timestamp", name: 'createdAt'})
   createdAt: Date

@@ -4,7 +4,6 @@ import { AppService } from './app.service';
 // import { ormConfig } from './orm.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
-import { EmailModule } from './email/email.module';
 // import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ConfigurationModule } from './configuration/configuration.module';
 import { JwtModule } from '@nestjs/jwt';
@@ -27,7 +26,6 @@ import { BoardModule } from './board/board.module';
   }),
     AuthModule,
     BoardModule,
-    EmailModule,
     ConfigurationModule
   ],
   controllers: [AppController],

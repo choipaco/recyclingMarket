@@ -1,13 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete,Req,Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete,Req,Res,UploadedFile,UseInterceptors } from '@nestjs/common';
 import { BoardService } from './board.service';
 import {Request,Response} from 'express';
-@Controller('board')
+import { FileInterceptor } from '@nestjs/platform-express';
+import { CreateBoardDto } from './DTO/createDTO';
+@Controller('market')
 export class BoardController {
     constructor(private readonly boardService: BoardService) {}
 
     @Post('/create')
-    Create(@Req() req:Request,@Res() res:Response){
-        return this.boardService.create(req,res);
+    @UseInterceptors(FileInterceptor('file'))
+    Create(@Req() req:Request,@Body() body:CreateBoardDto,@Res() res:Response, @UploadedFile() file: Express.Multer.File){
+        return this.boardService.create(body,req,res,file);
     }
 
     @Delete('/delete')
